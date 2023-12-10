@@ -10,7 +10,7 @@ fn main () {
 }
 
 fn part1(mut lines: Vec<String>) {
-    let mut directions = lines.first().cloned().unwrap();
+    let directions = lines.first().cloned().unwrap();
     lines.drain(..2);
 
     let mut data: HashMap<&str, (&str, &str)> = HashMap::new();
@@ -46,11 +46,10 @@ fn part1(mut lines: Vec<String>) {
 }
 
 fn part2(mut lines: Vec<String>) {
-    let mut directions = lines.first().cloned().unwrap();
+    let directions = lines.first().cloned().unwrap();
     lines.drain(..2);
 
-    // let mut data: HashMap<(&str, char), (&str, &str)> = HashMap::new();
-    let mut data: HashMap<&str, (char, &str, &str)> = HashMap::new();
+    let mut data: HashMap<&str, (&str, &str)> = HashMap::new();
 
     for line in &lines {
         let line: Vec<&str> = line.split(" = ").collect();
@@ -61,51 +60,50 @@ fn part2(mut lines: Vec<String>) {
         let slice = &line[1][start..end];
         let destinations = slice.split(", ").collect::<Vec<_>>(); 
 
-        data.insert(line[0], (line[0].chars().nth(2).unwrap(), destinations[0], destinations[1]));
+        data.insert(line[0], (destinations[0], destinations[1]));
     }
 
-    let start = data.iter().filter(|(k, _)| k.chars().nth(2).unwrap() == 'A').map(|(_, value)| *value).collect::<Vec<_>>();
+    let start = data.iter().filter(|(k, _)| k.chars().nth(2).unwrap() == 'A').map(|(k, _)| *k).collect::<Vec<_>>();
 
-    let mut i = 1;
-    let mut next: Vec<&str> = Vec::new();
-    let mut next_tmp: Vec<&str> = vec!();
+    let mut steps: Vec<usize> = vec!();
 
-    for entry in &start {
-        match &directions.chars().nth(0) {
-            Some('L') => next.push(entry.1),
-            Some('R') => next.push(entry.2),
-            _ => break
-        }
-    }
+    for n in start {
+        let mut current = n;
+        let mut i = 0;
 
-    while is_end(next.clone()) {
-        for entry in &next {
-            let paths = data.get(entry).unwrap();
+        while current.chars().nth(2).unwrap() != 'Z' {
             let id = i % &directions.len();
+            let nodes = data.get(current).unwrap();
 
             match &directions.chars().nth(id) {
-                Some('L') => next_tmp.push(paths.1),
-                Some('R') => next_tmp.push(paths.2),
+                Some('L') => current = nodes.0,
+                Some('R') => current = nodes.1,
                 _ => break
-            };
+            }
+            i += 1;
         }
-        i += 1;
-
-        next = vec!();
-        for x in &next_tmp {
-            next.push(x);
-        }
-        next_tmp = vec!();
+        steps.push(i);
     }
 
-    println!("{i}");
+    println!("{:?}", lcm_of_n(&steps));
 }
 
-fn is_end(strings: Vec<&str>) -> bool {
-    for s in strings {
-        if s.chars().nth(2).unwrap() != 'Z' {
-            return true;
-        }
+fn gcd(a: usize, b: usize) -> usize {
+    if b == 0 {
+        a
+    } else {
+        gcd(b, a % b)
     }
-    false
+}
+
+fn lcm(a: usize, b: usize) -> usize {
+    a * (b / gcd(a, b))
+}
+
+fn lcm_of_n(numbers: &[usize]) -> usize {
+    let mut result = numbers[0];
+    for &num in numbers.iter().skip(1) {
+        result = lcm(result, num);
+    }
+    result
 }
